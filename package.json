@@ -1,0 +1,27 @@
+{
+  "name": "restaurant-profiler",
+  "version": "1.0.0",
+  "description": "This app simulates a simple version of yelps customized reccomendations.",
+  "main": ".eslintrc.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/git-reset-hard/restaurant-profiler.git"
+  },
+  "author": "Enrique Hernandez",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/git-reset-hard/restaurant-profiler/issues"
+  },
+  "homepage": "https://github.com/git-reset-hard/restaurant-profiler#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "express": "^4.16.2",
+    "request": "^2.83.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.12.1"
+  }
+}
