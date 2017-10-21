@@ -1,10 +1,10 @@
-# Project Name
+# Yelp-alytics
 
-The project description
+This app simulates a simple version of yelps customized reccomendations.
 
 ## Roadmap
 
-View the project roadmap [here](LINK_TO_DOC)
+View the project roadmap [here](https://docs.google.com/document/d/1ov_HwNAnoe-0ddMg3-JCdaTWgSCVOFwpyQNRHojwgCo/edit#heading=h.oyffokdhed67)
 
 ## Contributing
 
