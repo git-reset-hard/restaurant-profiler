@@ -3,9 +3,9 @@ var request = require('request');
 var rp = require('request-promise');
 
 
-const fetchAll = (terms) => {
+const fetchRestaurantList = (terms) => {
   let options = {
-    url: `https://api.yelp.com/v3/businesses/search?term=${terms}&location=san-francisco`,
+    url: `https://api.yelp.com/v3/businesses/search?term=${terms}&location=34746`,
     auth: {
       'bearer': 'VIbYemNYt5Ovsg5HgnB9eWuQznMb9Om1CbYboaZLE3jsq8xRYcTHrlO30DRFXXtZtiVAmL6WPN3MV98WXAft5l4sXydQfrtIJeYidoKI9IFTXmNFJbasKIX881vdWXYx'
     },
@@ -13,6 +13,25 @@ const fetchAll = (terms) => {
   return rp(options);
 };
 
+const fetchAllRestaurantDetails = (restaurantId) => {
+  let options = {
+    url: `https://api.yelp.com/v3/businesses/${restaurantId}`,
+    auth: {
+      'bearer': 'VIbYemNYt5Ovsg5HgnB9eWuQznMb9Om1CbYboaZLE3jsq8xRYcTHrlO30DRFXXtZtiVAmL6WPN3MV98WXAft5l4sXydQfrtIJeYidoKI9IFTXmNFJbasKIX881vdWXYx'
+    },
+  };
+  return rp(options);
+};
+
+const fetchAllReviews = (restaurantId) => {
+  let options = {
+    url: `https://www.yelp.com/biz/${restaurantId}`,
+  };
+  return rp(options);
+};
+
 module.exports = {
-  fetchAll
+  fetchRestaurantList,
+  fetchAllRestaurantDetails,
+  fetchAllReviews
 };
