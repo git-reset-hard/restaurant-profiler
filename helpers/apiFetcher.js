@@ -70,7 +70,8 @@ const generateDetailedRestaurantsObject = () => {
 
   var randomPriceMaker = function() {
     var price = ['0.2', '0.4', '0.6', '0.8'];
-    var randomIndex = Math.floor(Math.random() * 5);
+    var randomIndex = Math.floor(Math.random() * 4);
+    // console.log(randomIndex);
     return price[randomIndex];
   };
 
@@ -189,32 +190,55 @@ const generateDetailedRestaurantsObject = () => {
 
 };
 
+var makeuser = () => {
+  var fakeLocationData = location.location;
+  fakeLocationData = fakeLocationData.split('\t\t\n');
+  var randomLocationIndex = Math.floor(Math.random() * 81256);
+  if (fakeLocationData[randomLocationIndex] === undefined) {
+    console.log('UNDEFINED FOUND!!!', randomLocationIndex, fakeLocationData[randomLocationIndex]);
+  }
+  var randomLocation = fakeLocationData[randomLocationIndex].split('\tpumpkins\t');
+  var user = {
+    userId: makeUserId(),
+    latitude: randomLocation[3], 
+    longitude: randomLocation[4],
+    zipcode: randomLocation[0]
+  };
+  return user;
+};
+
+var chooseRandomUser = () => {
+  return Math.floor(Math.random() * 11000);
+  //math.random should be multiplied by however many users there are plus 1
+};
+
 var makeRestaurantReviews = (restaurantId) => {
-  var reviews = [];
+  // var reviews = [];
   const randomDate = function(start, end) {
     return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
   };
 
-  for (var i = 0; i < 101; i++) {
-    var fakeLocationData = location.location;
-    fakeLocationData = fakeLocationData.split('\t\t\n');
-    var rating = Math.floor(Math.random() * 6);
-    var randomLocationIndex = Math.floor(Math.random() * 81257);
-    var randomLocation = fakeLocationData[randomLocationIndex].split('\tpumpkins\t');
-    var date = randomDate(new Date(2017, 6, 1), new Date());
+  // for (var i = 0; i < 101; i++) {
+    //random number generate ID
+    // var fakeLocationData = location.location;
+    // fakeLocationData = fakeLocationData.split('\t\t\n');
+  var rating = Math.floor(Math.random() * 6);
+  // var randomLocationIndex = Math.floor(Math.random() * 81257);
+  // var randomLocation = fakeLocationData[randomLocationIndex].split('\tpumpkins\t');
+  var date = randomDate(new Date(2017, 6, 1), new Date());
 
-    var review = {
-      latitude: randomLocation[3], 
-      longitude: randomLocation[4],
-      zipcode: randomLocation[0],
-      userId: makeUserId(),
-      rating: rating || 5,
-      restaurantId: restaurantId,
-      date: date
-    };
-    reviews.push(review);
-  }
-  return reviews;
+  var review = {
+    // latitude: randomLocation[3], 
+    // longitude: randomLocation[4],
+    // zipcode: randomLocation[0],
+    userId: chooseRandomUser(),
+    rating: rating || 5,
+    restaurantId: restaurantId,
+    date: date
+  };
+  // reviews.push(review);
+  // }
+  return review;
 };
 
 var makeRestaurantProfile = (restaurant) => {
@@ -229,13 +253,13 @@ var makeRestaurantProfile = (restaurant) => {
     ],
     'rating': restaurant.rating, 
     'city': restaurant.location.city, 
-    'zip_code': restaurant.location.zip_code, 
+    'zipcode': restaurant.location.zip_code, 
     'country': restaurant.location.country, 
     'state': restaurant.location.state, 
     'latitude': restaurant.coordinates.latitude, 
     'longitude': restaurant.coordinates.longitude,
-    'price': restaurant.price,
-    reviews: makeRestaurantReviews(restaurantProfile.id)
+    'price': restaurant.price
+    // reviews: makeRestaurantReviews(restaurantProfile.id)
   };
 
   return restaurantProfile;
@@ -253,7 +277,7 @@ var makeRestaurantProfileWithoutReviews = (restaurant) => {
     ],
     'rating': restaurant.rating, 
     'city': restaurant.location.city, 
-    'zip_code': restaurant.location.zip_code, 
+    'zipcode': restaurant.location.zip_code, 
     'country': restaurant.location.country, 
     'state': restaurant.location.state, 
     'latitude': restaurant.coordinates.latitude, 
@@ -273,5 +297,6 @@ module.exports = {
   generateDetailedRestaurantsObject,
   makeRestaurantReviews,
   makeRestaurantProfile,
-  makeRestaurantProfileWithoutReviews
+  makeRestaurantProfileWithoutReviews,
+  makeuser
 };

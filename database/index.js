@@ -1,148 +1,78 @@
-const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/fetcher');
+var Sequelize = require('sequelize');
 
-let reviews = mongoose.Schema({
-  latitude: String,
-  longitude: String,
-  zipcode: Number,
-  userId: Number,
-  rating: Number,
-  restaurantId: Number,
-  date: Date
+var connection = new Sequelize('yelp', 'root', '', {
+  dialect: 'mysql',
+  // logging: false,
+  pool: {
+    maxConnections: 5000,
+    minConnections: 1,
+    maxIdleTime: 3600000,
+    acquire: 20000
+  }
 });
 
-let restaurants = mongoose.Schema({
-  yelpId: String,
-  phone: String,
-  rating: Number,
-  city: String,
-  zipcode: String,
-  country: String,
-  state: String,
-  latitude: String,
-  longitude: String,
-  price: String
+var User = connection.define('user', {
+  userId: Sequelize.TEXT,
+  latitude: Sequelize.TEXT,
+  longitude: Sequelize.TEXT,
+  zipcode: Sequelize.INTEGER
 });
 
-let categories = mongoose.Schema({
-  category: String
+var Review = connection.define('review', {
+  rating: Sequelize.INTEGER,
+  dates: Sequelize.DATE
+  // userId and restaurantId are foreign keys
 });
 
-let restaurantCategories = mongoose.Schema({
-  restaurantId: Number,
-  categoryId: Number
+var Restaurant = connection.define('restaurant', {
+  yelpId: Sequelize.TEXT,
+  latitude: Sequelize.TEXT,
+  longitude: Sequelize.TEXT,
+  rating: Sequelize.INTEGER,
+  city: Sequelize.TEXT,
+  zipcode: Sequelize.TEXT,
+  country: Sequelize.TEXT,
+  state: Sequelize.TEXT,
+  price: Sequelize.TEXT
 });
 
-let users = mongoose.Schema({
-  user: Number
+var Categories = connection.define('categories', {
+  category: Sequelize.TEXT
+});
+ 
+var RestaurantCategories = connection.define('restaurantCategories', {
+  restaurantId: Sequelize.INTEGER,
+  categoryId: Sequelize.INTEGER
 });
 
 
 
-let Review = mongoose.model('Review', reviews);
-let Restaurant = mongoose.model('Restaurant', restaurants);
-let Category = mongoose.model('Category', categories);
-let RestaurantCategory = mongoose.model('RestaurantCategory', restaurantCategories);
-let User = mongoose.model('User', users);
+User.hasMany(Review, { foreignKey: 'userId' });
+Review.belongsTo(User, { foreignKey: 'userId' });
 
-let saveReview = (data) => {
-  var newReview = new Review({ latitude: data.latitude, longitude: data.longitude, zipcode: data.zipcode, userId: data.userId, rating: data.rating, restaurantId: data.restaurantId, date: data.date });
-  newReview.save(function(err, result) {
-    if (err) {
-      console.log('saving failed', err);
-    } else {
-      console.log('saved');
-      return result;
-    }
-  });
-};
+Restaurant.hasMany(Review, { foreignKey: 'restaurantId' });
+Review.belongsTo(Restaurant, { foreignKey: 'restaurantId' });
 
-saveRestaurant = (data) => {
-  var newRestaurant = new Restaurant({ yelpId: data.yelpId, phone: data.phone, rating: data.rating, city: data.city, zipcode: data.zip_code, country: data.country, state: data.state, latitude: data.latitude, longitude: data.longitude, price: data.price });
-  newRestaurant.save(function(err, result) {
-    if (err) {
-      console.log('saving failed', err);
-    } else {
-      console.log('saved');
-      return result;
-    }
-  });
-};
 
-saveRestaurantCategories = (restaurantId, categoryId) => {
-  var newJoin = new RestaurantCategory({ restaurantId: restaurantId, categoryId: categoryId });
-  newJoin.save(function(err, result) {
-    if (err) {
-      console.log('saving failed', err);
-    } else {
-      console.log('saved');
-      return result;
-    }
-  });
-};
 
-saveCategories = (data) => {
-  var CategoryOne = new Category({ category: data.categories[0] });
-  var CategoryTwo = new Category({ category: data.categories[1] });
-  var CategoryThree = new Category({ category: data.categories[2] });
 
-  Category.find({ category: data.categories[0] }, function(err, docs) {
-    if (docs.length) {
-      console.log('category was already stored');
-    } else {
-      CategoryOne.save(function(err, result) {
-        if (err) {
-          console.log('saving failed', err);
-        } else {
-          console.log('saved');
-          return result;
-        }
-      });
-    }
-  });
+connection.sync();
 
-  Category.find({ category: data.categories[1] }, function(err, docs) {
-    if (docs.length) {
-      console.log('category was already stored');
-    } else {
-      CategoryTwo.save(function(err, result) {
-        if (err) {
-          console.log('saving failed', err);
-        } else {
-          console.log('saved');
-          return result;
-        }
-      });
-    }
-  });
+//make 100k restaurants
+//save restaurants - get back restaurant id
+//make 40K user 
+//save users 
+//make 100 reviews per restaurant
+//save categories
+//save restaurantCategories
 
-  Category.find({ category: data.categories[2] }, function(err, docs) {
-    if (docs.length) {
-      console.log('category was already stored');
-    } else {
-      CategoryThree.save(function(err, result) {
-        if (err) {
-          console.log('saving failed', err);
-        } else {
-          console.log('saved');
-          return result;
-        }
-      });
-    }
-  });
-};
 
-var saveUsers = (data) => {
-  var newUser = new User({ user: data.userId });
-  newUser.save(function(err, result) {
-    if (err) {
-      console.log('saving failed', err);
-    } else {
-      console.log('saved');
-      return result;
-    }
-  });
-};
+
+exports.User = User;
+exports.Review = Review;
+exports.Restaurant = Restaurant;
+exports.Categories = Categories;
+exports.RestaurantCategories = RestaurantCategories;
 
 
 
@@ -150,33 +80,26 @@ var saveUsers = (data) => {
 
 
 
+// var mysql = require('mysql');
+
+// // Create a database connection and export it from this file.
+// // You will need to connect with the user "root", no password,
+// // and to the database "chat".
 
 
+// var connection = mysql.createConnection({
+//   database: 'yelp',
+//   user: 'root',
+//   password: ''
+// });
+ 
+// connection.connect(function(err) {
+//   if (err) {
+//     console.error('error connecting: ' + err.stack);
+//     return;
+//   }
+ 
+//   console.log('connected as id ' + connection.threadId);
+// });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// exports.connection = connection;

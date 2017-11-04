@@ -7,6 +7,8 @@ var fetcher = require('../helpers/apiFetcher.js');
 var faker = require('faker');
 var fs = require('fs');
 var location = require('./fakeLocationData.txt');
+var db = require('./dbQueryFunctions.js');
+var Promise = require('bluebird');
 
 // todays objectives
 //set up and start loading database
@@ -17,29 +19,367 @@ var location = require('./fakeLocationData.txt');
 // console.log(fakeLocationData[0].split('\tpumpkins\t'));
 // console.log(fakeLocationData.length);
 
+// var saveRestaurantTable = Promise.promisify(db.restaurants.save);
+// var saveUserTable = Promise.promisify(db.users.save);
+// var saveReviewTable = Promise.promisify(db.reviews.save);
+
+// var makeUserId = function() {
+//   var text = '';
+//   var possible = '0123456789';
+//   for (var i = 0; i < 22; i++) {
+//     text += possible.charAt(Math.floor(Math.random() * possible.length));
+//   }
+//   return text;
+// };
+     
+// var saveUsers = () => {
+//   console.log('its in save users');
+//   var users = [];
+//   for (var i = 0; i < 4000; i++) {
+//     // console.log(i);
+//     var user = fetcher.makeuser();
+//     users.push(user);
+//   }
+//   console.log('finished the loop');
+//   db.users.save(users)
+//     .then(data => {
+//       console.log('users saved', data);
+//     })
+//     .catch(function(err) {
+//       // Will catch any promise rejections or thrown errors in the chain!
+//       console.log('there was an error saving to the database', err.message);
+//     });
+// };
+
+// saveUsers(); 
 
 
 
-app.get('/', (req, res) => {
-  // var yelp = fetcher.generateDetailedRestaurantsObject();
-  // var restaurantProfile = fetcher.makeRestaurantProfile(yelp);
-  // var restaurantProfileWithoutReviews = fetcher.makeRestaurantProfileWithoutReviews(yelp);
-  // console.log(typeof parseFloat(restaurantProfile.price), parseFloat(restaurantProfile.price), restaurantProfile.price);
-  // res.send(JSON.stringify(restaurantProfile.coordinates.latitude));
+// // simple CLI
+// // [usage] node userdata.js <NUMBER_OF_USERS_TO_GENERATE>
+// if (process.argv.length > 2) {
+//   const cmd = process.argv[2];
+//   const parsedNumberCmd = parseInt(cmd, 10);
+//   if (Number.isInteger(parsedNumberCmd) && parsedNumberCmd > 0) {
 
-  //make fake yelp response 
-  //make restaurant profile
-  //save each restaurant
-  //save each category
-  //save each restaurantCategory
-  //  save each user
-  //    save each review
-  //
+//     var repeat = (repeatAmount) => {
+//       for (var i = 0; i < repeatAmount; i++) {
+//         restaurantProfileMaker();
+//         // console.log('hello');
+//       }
+//     };
+
+//     repeat(parsedNumberCmd);
+//   }
+// } else {
+//   // console.log(`
+//   //   Utility script used to generate initial User data to populate a dataset.
+
+//   //   Results are placed in an '${DEFAULT.OUTPUT_FILE}' file.
+
+//   //     [usage] node ${path.basename(__filename)} <NUMBER_OF_USERS_TO_GENERATE>
+//   //   `);
+// }
 
 
-});
 
 
+var chooseRandomUser = () => {
+  return Math.floor(Math.random() * 1001);
+  //math.random should be multiplied by however many users there are plus 1
+};
+
+
+
+// app.get('/', (req, res) => {
+
+
+  //_______________________________ uncomment from here _____________________
+
+
+var restaurantProfileMaker = function() {
+  console.log('a new restaurant is being made');
+  var yelp = fetcher.generateDetailedRestaurantsObject();
+  var restaurantProfile = fetcher.makeRestaurantProfile(yelp);
+  var allReviews = [];
+  var allCategories = [];
+  var allRestaurantCategories = [];
+  var userId = {};
+  db.restaurants.save(restaurantProfile)
+    .then((data) => {
+      // console.log('it passed!!!!!!!!!!!!!!!');
+      var restaurantId = data.dataValues.id;
+      restaurantProfile.id = restaurantId;
+      //makeRestaurantReviews = array of objects
+      for (var i = 0; i < 101; i++) {
+        var review = fetcher.makeRestaurantReviews(restaurantId);
+        userId = review.userId;
+        var reviewForDb = {
+          rating: review.rating,
+          dates: review.date,
+          userId: review.userId,
+          restaurantId: review.restaurantId
+        };
+        allReviews.push(reviewForDb);
+      }
+      db.reviews.save(allReviews)
+        .then((data) => {
+          // data.forEach(review => {
+          //   console.log('review Data', review.dataValues);
+          // });
+          restaurantProfile.categories.forEach(category => {
+            var categoryForDb = {
+              category: category
+            };
+            allCategories.push(categoryForDb);
+          }); 
+          db.categories.save(allCategories)
+            .then((data) => {
+              // console.log('catgories saved', data);
+              data.forEach(category => {
+                // console.log('category Data', category.dataValues);
+                // console.log('category.dataValues.id', category.dataValues.id);
+                var categoriesId = category.dataValues.id;
+                var restaurantCategoryObj = {
+                  restaurantId: restaurantId,
+                  categoryId: categoriesId
+                };
+                allRestaurantCategories.push(restaurantCategoryObj);
+              });
+              db.restaurantCategories.save(allRestaurantCategories)
+                .then((data) => {
+                  // console.log('restaurantCategories!', data);
+                  // data.forEach(function(restaurantCategory) {
+                  //   // console.log('YUP!!!', restaurantCategory.dataValues);
+                  // });
+                  allReviews.forEach((review, i) => {
+                    db.users.get(review.userId)
+                      .then((data) => {
+                        // console.log('user Info!!', data.dataValues);
+                        var currentReview = data.dataValues;
+                        review.latitude = currentReview.latitude;
+                        // console.log('latitude', review.latitude);
+                        review.longitude = currentReview.longitude;
+                        // console.log('longitude', review.longitude);
+                        review.zipcode = currentReview.zipcode;
+                        // console.log('zipcode', review.zipcode);
+                        restaurantProfile.reviews = allReviews;
+                        if (i === (allReviews.length - 1)) {
+                          console.log('restaurant profile', restaurantProfile);  
+                        }
+                      })
+                      .catch(function(err) {
+                        // Will catch any promise rejections or thrown errors in the chain!
+                        console.log('there was an error saving restaurantCategories to the database', err.message);
+                      });
+                    
+                  });
+
+                //add userId and information to the restaurantProfile
+                })
+                .catch(function(err) {
+                  // Will catch any promise rejections or thrown errors in the chain!
+                  console.log('there was an error saving restaurantCategories to the database', err.message);
+                });
+            })
+            .catch(function(err) {
+              // Will catch any promise rejections or thrown errors in the chain!
+              console.log('there was an error saving reviews to the database', err.message);
+            });
+        })
+        .catch(function(err) {
+          // Will catch any promise rejections or thrown errors in the chain!
+          console.log('there was an error saving reviews to the database', err.message);
+        });
+       
+    })
+    .catch(function(err) {
+      // Will catch any promise rejections or thrown errors in the chain!
+      console.log('there was an error saving to the database', err.message);
+    });
+};
+// });
+
+
+// simple CLI
+// [usage] node userdata.js <NUMBER_OF_USERS_TO_GENERATE>
+if (process.argv.length > 2) {
+  const cmd = process.argv[2];
+  const parsedNumberCmd = parseInt(cmd, 10);
+  if (Number.isInteger(parsedNumberCmd) && parsedNumberCmd > 0) {
+
+    var repeat = (repeatAmount) => {
+      for (var i = 0; i < repeatAmount; i++) {
+        restaurantProfileMaker();
+        // console.log('hello');
+      }
+    };
+
+    repeat(parsedNumberCmd);
+  }
+} else {
+  // console.log(`
+  //   Utility script used to generate initial User data to populate a dataset.
+
+  //   Results are placed in an '${DEFAULT.OUTPUT_FILE}' file.
+
+  //     [usage] node ${path.basename(__filename)} <NUMBER_OF_USERS_TO_GENERATE>
+  //   `);
+}
+
+
+// ______________ uncomment until here __________________________
+
+
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+
+
+// var fetchRestaurantProfile = function(restaurantId) {
+//   //get a restaurant
+//   db.restaurants.get(restaurantId)
+//     .then(data => {
+//       console.log('restaurant', data.dataValues);
+//     })
+//     .catch(function(err) {
+//       // Will catch any promise rejections or thrown errors in the chain!
+//       console.log('there was an error saving to the database', err.message);
+//     });
+//   //get all reviews where restaurantId is equal to current restaurant
+//   //get all users that belong to each review
+//   //get all categoryIds where restaurantId is equal to current restaurant 
+//   //get all categories that belong to the restaurant 
+// };
+
+
+// fetchRestaurantProfile(1);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+//______________________________________________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// var yelp = fetcher.generateDetailedRestaurantsObject();
+// var restaurantProfile = fetcher.makeRestaurantProfile(yelp);
+// var restaurantProfileWithoutReviews = fetcher.makeRestaurantProfileWithoutReviews(yelp);
+// console.log(typeof parseFloat(restaurantProfile.price), parseFloat(restaurantProfile.price), restaurantProfile.price);
+// res.send(JSON.stringify(restaurantProfile.coordinates.latitude));
+
+// //make fake yelp response 
+// var yelpResponse = fetcher.generateDetailedRestaurantsObject();
+// // var yelpResponse = fetcher.generateDetailedRestaurantsObject();
+// //make restaurant profile
+// var restaurantProfile = fetcher.makeRestaurantProfile(yelpResponse);
+// // console.log('restaurantProfile', restaurantProfile);
+// //save restaurant in database and get response with restaurant id in it
+// saveRestaurantTable(restaurantProfile)
+//   .then(data => {
+//     console.log('saved', data);
+//     for (var i = 0; i < 101; i++) {
+//       console.log('i', i);
+//       var user = makeUserId();
+//       // console.log('typeof', typeof user)
+//       saveUserTable(user)
+//         .then(data => {
+//           console.log('userData', 'i', i, data);
+//           var review = fetcher.makeRestaurantReviews(restaurantProfile, data.insertId);
+//           saveReviewTable(review)
+//             .then(data => {
+//               console.log('review was saved!!!!!!hi');
+//             })
+//             .catch(function(err) {
+//               // Will catch any promise rejections or thrown errors in the chain!
+//               console.log('there was an error saving to the database', err.message);
+//             });
+//         })
+//         .catch(function(err) {
+//           // Will catch any promise rejections or thrown errors in the chain!
+//           console.log('there was an error saving to the database', err.message);
+//         });
+//     }
+
+//   })
+//   .catch(function(err) {
+//     // Will catch any promise rejections or thrown errors in the chain!
+//     console.log('there was an error saving to the database', err.message);
+//   });
+
+// make reviews and include new restaurant id
+//save each category
+//save each restaurantCategory
+//  save each user
+//    save each review
+//
 
 
 
@@ -210,6 +550,6 @@ app.get('/', (req, res) => {
 
 
 
-app.listen(3000, function () {
-  console.log('listening on port 3000!');
-});
+// app.listen(3000, function () {
+//   console.log('listening on port 3000!');
+// });
