@@ -143,7 +143,7 @@ var restaurantProfileMaker = function() {
           restaurantProfile.categories.forEach(category => {
             var categoryForDb = {
               category: category
-            };
+            }; 
             allCategories.push(categoryForDb);
           }); 
           db.categories.save(allCategories)
@@ -162,7 +162,7 @@ var restaurantProfileMaker = function() {
               });
               db.restaurantCategories.save(allRestaurantCategories)
                 .then((data) => {
-
+                  // console.log('allReviews', allReviews);
                   let querySQSTwo = {
                     DelaySeconds: 10,
                     MessageBody: JSON.stringify(restaurantProfile),
@@ -316,6 +316,7 @@ if (process.argv.length > 2) {
     var repeat = (repeatAmount) => {
       for (var i = 0; i < repeatAmount; i++) {
         restaurantProfileMaker();
+
         // console.log('hello');
       }
     };

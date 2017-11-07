@@ -68,9 +68,9 @@ var pickTrueOrFalse = function() {
 
 const generateDetailedRestaurantsObject = () => {
   // console.log('cats', categories.length)
-  var randomCategoryIndexOne = Math.floor(Math.random() * 190);
-  var randomCategoryIndexTwo = Math.floor(Math.random() * 190);
-  var randomCategoryIndexThree = Math.floor(Math.random() * 190);
+  var randomCategoryIndexOne = Math.floor(Math.random() * 189);
+  var randomCategoryIndexTwo = Math.floor(Math.random() * 189);
+  var randomCategoryIndexThree = Math.floor(Math.random() * 189);
   faker.locale = 'en_US';
 
 
@@ -92,7 +92,7 @@ const generateDetailedRestaurantsObject = () => {
   // var randomAliasThree = faker.random.word();
   var name = faker.name.findName();
   var rating = Math.floor(Math.random() * 6);
-  var randomLocationIndex = Math.floor(Math.random() * 81256);
+  var randomLocationIndex = Math.floor(Math.random() * 300) + 50000;
   var randomLocation = fakeLocationData[randomLocationIndex].split('\tpumpkins\t');
 
 
