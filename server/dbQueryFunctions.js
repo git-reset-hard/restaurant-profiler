@@ -15,7 +15,8 @@ module.exports = {
           city: data.city,
           country: data.country,
           state: data.state,
-          price: data.price
+          price: data.price,
+          is_closed: data.is_closed
         })
       );
     }

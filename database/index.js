@@ -2,7 +2,7 @@ var Sequelize = require('sequelize');
 
 var connection = new Sequelize('yelp', 'root', '', {
   dialect: 'mysql',
-  // logging: false,
+  logging: false,
   pool: {
     maxConnections: 5000,
     minConnections: 1,
@@ -20,7 +20,8 @@ var User = connection.define('user', {
 
 var Review = connection.define('review', {
   rating: Sequelize.INTEGER,
-  dates: Sequelize.DATE
+  dates: Sequelize.DATE,
+  body: Sequelize.TEXT
   // userId and restaurantId are foreign keys
 });
 
@@ -33,9 +34,10 @@ var Restaurant = connection.define('restaurant', {
   zipcode: Sequelize.TEXT,
   country: Sequelize.TEXT,
   state: Sequelize.TEXT,
-  price: Sequelize.TEXT
+  price: Sequelize.TEXT,
+  is_closed: Sequelize.BOOLEAN
 });
-
+ 
 var Categories = connection.define('categories', {
   category: Sequelize.TEXT
 });
@@ -46,9 +48,9 @@ var RestaurantCategories = connection.define('restaurantCategories', {
 });
 
 
-
-User.hasMany(Review, { foreignKey: 'userId' });
-Review.belongsTo(User, { foreignKey: 'userId' });
+ 
+// User.hasMany(Review, { foreignKey: 'userId' });
+// Review.belongsTo(User, { foreignKey: 'userId' });
 
 Restaurant.hasMany(Review, { foreignKey: 'restaurantId' });
 Review.belongsTo(Restaurant, { foreignKey: 'restaurantId' });

@@ -1,3 +1,11 @@
+//to do
+// fix restaurant profile maker
+//add text to reviews
+//add an is open property to restaurant
+
+
+
+
 var request = require('request');
 var rp = require('request-promise');
 var cheerio = require('cheerio');
@@ -9,6 +17,9 @@ var fs = require('fs');
 var location = require('./fakeLocationData.txt');
 var db = require('./dbQueryFunctions.js');
 var Promise = require('bluebird');
+var AWS = require('aws-sdk');
+AWS.config.loadFromPath('./config/config.json');
+var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
 
 // todays objectives
 //set up and start loading database
@@ -54,7 +65,7 @@ var Promise = require('bluebird');
 // saveUsers(); 
 
 
-
+  
 // // simple CLI
 // // [usage] node userdata.js <NUMBER_OF_USERS_TO_GENERATE>
 // if (process.argv.length > 2) {
@@ -85,7 +96,7 @@ var Promise = require('bluebird');
 
 
 var chooseRandomUser = () => {
-  return Math.floor(Math.random() * 1001);
+  return Math.floor(Math.random() * 40000);
   //math.random should be multiplied by however many users there are plus 1
 };
 
@@ -96,9 +107,9 @@ var chooseRandomUser = () => {
 
   //_______________________________ uncomment from here _____________________
 
-
+ 
 var restaurantProfileMaker = function() {
-  console.log('a new restaurant is being made');
+  // console.log('a new restaurant is being made');
   var yelp = fetcher.generateDetailedRestaurantsObject();
   var restaurantProfile = fetcher.makeRestaurantProfile(yelp);
   var allReviews = [];
@@ -117,10 +128,12 @@ var restaurantProfileMaker = function() {
         var reviewForDb = {
           rating: review.rating,
           dates: review.date,
+          body: review.body,
           userId: review.userId,
           restaurantId: review.restaurantId
         };
         allReviews.push(reviewForDb);
+ 
       }
       db.reviews.save(allReviews)
         .then((data) => {
@@ -139,6 +152,7 @@ var restaurantProfileMaker = function() {
               data.forEach(category => {
                 // console.log('category Data', category.dataValues);
                 // console.log('category.dataValues.id', category.dataValues.id);
+                // console.log('category!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', category.dataValues);
                 var categoriesId = category.dataValues.id;
                 var restaurantCategoryObj = {
                   restaurantId: restaurantId,
@@ -148,38 +162,129 @@ var restaurantProfileMaker = function() {
               });
               db.restaurantCategories.save(allRestaurantCategories)
                 .then((data) => {
-                  // console.log('restaurantCategories!', data);
-                  // data.forEach(function(restaurantCategory) {
-                  //   // console.log('YUP!!!', restaurantCategory.dataValues);
-                  // });
-                  allReviews.forEach((review, i) => {
-                    db.users.get(review.userId)
-                      .then((data) => {
-                        // console.log('user Info!!', data.dataValues);
-                        var currentReview = data.dataValues;
-                        review.latitude = currentReview.latitude;
-                        // console.log('latitude', review.latitude);
-                        review.longitude = currentReview.longitude;
-                        // console.log('longitude', review.longitude);
-                        review.zipcode = currentReview.zipcode;
-                        // console.log('zipcode', review.zipcode);
-                        restaurantProfile.reviews = allReviews;
-                        if (i === (allReviews.length - 1)) {
-                          console.log('restaurant profile', restaurantProfile);  
-                        }
-                      })
-                      .catch(function(err) {
-                        // Will catch any promise rejections or thrown errors in the chain!
-                        console.log('there was an error saving restaurantCategories to the database', err.message);
-                      });
-                    
+
+                  let querySQSTwo = {
+                    DelaySeconds: 10,
+                    MessageBody: JSON.stringify(restaurantProfile),
+                    //QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantToAppServer'
+                    QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/appserver'
+                  };
+
+                  sqs.sendMessage(querySQSTwo, function(err, data) {
+                    if (err) {
+                      console.log('Error sending to restaurantToAppServer queue"', err);
+                    } else {
+                      console.log('Success sending to restaurantToAppServer queue', data.MessageId);
+                    }
                   });
+
+                  let querySQS = {
+                    DelaySeconds: 10,
+                    MessageBody: JSON.stringify(restaurantProfile),
+                    // QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/appserver'
+                    QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantProfileToRecommender'
+                  };
+
+                  sqs.sendMessage(querySQS, function(err, data) {
+                    if (err) {
+                      console.log('Error sending to restaurantProfileToRecommender queue"', err);
+                    } else {
+                      console.log('Success sending to restaurantProfileToRecommender queue', data.MessageId);
+                    }
+                  });
+
+                  let querySQSFour = {
+                    DelaySeconds: 10,
+                    MessageBody: JSON.stringify(restaurantProfile),
+                    QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantProfileToCustomer'
+                  };
+
+                  sqs.sendMessage(querySQSFour, function(err, data) {
+                    if (err) {
+                      console.log('Error sending to restaurantProfileToCustomer queue"', err);
+                    } else {
+                      console.log('Success sending to restaurantProfileToCustomer queue', data.MessageId);
+                    }
+                  });
+
+                  // restaurantProfile.reviews = allReviews;
+                  // if (i === (allReviews.length - 1)) {
+                  // console.log('restaurant profile', restaurantProfile);  
+                  // _____________________________________________________________
+                  // let querySQS = {
+                  //   DelaySeconds: 10,
+                  //   MessageBody: JSON.stringify(restaurantProfile),
+                  //   // QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/appserver'
+                  //   QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantProfileToRecommender'
+                  // };
+  
+                  // sqs.sendMessage(querySQS, function(err, data) {
+                  //   if (err) {
+                  //     console.log('Error sending to restaurantProfileToRecommender queue"', err);
+                  //   } else {
+                  //     console.log('Success sending to restaurantProfileToRecommender queue', data.MessageId);
+                  //   }
+                  // });
+
+
+                  // let querySQSTwo = {
+                  //   DelaySeconds: 10,
+                  //   MessageBody: JSON.stringify(restaurantProfile),
+                  //   //QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantToAppServer'
+                  //   QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/appserver'
+                  // };
+
+                  // sqs.sendMessage(querySQSTwo, function(err, data) {
+                  //   if (err) {
+                  //     console.log('Error sending to restaurantToAppServer queue"', err);
+                  //   } else {
+                  //     console.log('Success sending to restaurantToAppServer queue', data.MessageId);
+                  //   }
+                  // });
+
+
+                  let querySQSThree = {
+                    DelaySeconds: 10,
+                    MessageBody: JSON.stringify(allReviews),
+                    QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/reviewsToCustomerProfile'
+                  };
+
+                  sqs.sendMessage(querySQSThree, function(err, data) {
+                    if (err) {
+                      console.log('Error sending to reviewsToCustomerProfile queue"', err);
+                    } else {
+                      console.log('Success sending to reviewsToCustomerProfile queue', data.MessageId);
+                    }
+                  });
+
+                  // let querySQSFour = {
+                  //   DelaySeconds: 10,
+                  //   MessageBody: JSON.stringify(restaurantProfile),
+                  //   QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantProfileToCustomer'
+                  // };
+
+                  // sqs.sendMessage(querySQSFour, function(err, data) {
+                  //   if (err) {
+                  //     console.log('Error sending to restaurantProfileToCustomer queue"', err);
+                  //   } else {
+                  //     console.log('Success sending to restaurantProfileToCustomer queue', data.MessageId);
+                  //   }
+                  // });
+                  // _____________________________________________________________
+                  // }
+                // })
+                // .catch(function(err) {
+                //   // Will catch any promise rejections or thrown errors in the chain!
+                //   console.log('there was an error saving restaurantCategories1 to the database', err.message);
+                // });
+                    
+                  // });
 
                 //add userId and information to the restaurantProfile
                 })
                 .catch(function(err) {
                   // Will catch any promise rejections or thrown errors in the chain!
-                  console.log('there was an error saving restaurantCategories to the database', err.message);
+                  console.log('there was an error saving restaurantCategories2 to the database', err.message);
                 });
             })
             .catch(function(err) {

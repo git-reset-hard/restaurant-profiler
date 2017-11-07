@@ -3,6 +3,8 @@ var request = require('request');
 var rp = require('request-promise');
 var faker = require('faker');
 var location = require('../server/fakeLocationData.txt');
+var txtgen = require('txtgen');
+var categories = require('./restaurantCategories.js');
 
 
 // const fetchRestaurantList = (terms) => {
@@ -41,6 +43,11 @@ var makeUserId = function() {
   return text;
 };
 
+var pickTrueOrFalse = function() {
+  var binaryDecision = Math.ceil(Math.random() * 2);
+  return binaryDecision === 1 ? true : false;
+};
+
 // var makeReviewId = function() {
 //   var text = '';
 //   var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789';
@@ -60,7 +67,10 @@ var makeUserId = function() {
 // };
 
 const generateDetailedRestaurantsObject = () => {
-
+  // console.log('cats', categories.length)
+  var randomCategoryIndexOne = Math.floor(Math.random() * 190);
+  var randomCategoryIndexTwo = Math.floor(Math.random() * 190);
+  var randomCategoryIndexThree = Math.floor(Math.random() * 190);
   faker.locale = 'en_US';
 
 
@@ -70,16 +80,16 @@ const generateDetailedRestaurantsObject = () => {
 
   var randomPriceMaker = function() {
     var price = ['0.2', '0.4', '0.6', '0.8'];
-    var randomIndex = Math.floor(Math.random() * 4);
+    var randomIndex = Math.ceil(Math.random() * 4);
     // console.log(randomIndex);
-    return price[randomIndex];
+    return randomIndex.toString();
   };
 
   var fakeLocationData = location.location;
   fakeLocationData = fakeLocationData.split('\t\t\n');
-  var randomAliasOne = faker.random.word();
-  var randomAliasTwo = faker.random.word();
-  var randomAliasThree = faker.random.word();
+  // var randomAliasOne = faker.random.word();
+  // var randomAliasTwo = faker.random.word();
+  // var randomAliasThree = faker.random.word();
   var name = faker.name.findName();
   var rating = Math.floor(Math.random() * 6);
   var randomLocationIndex = Math.floor(Math.random() * 81256);
@@ -91,23 +101,23 @@ const generateDetailedRestaurantsObject = () => {
     'name': name, 
     'image_url': 'https://s3-media2.fl.yelpcdn.com/bphoto/SRj2lQJkjLQ-TxccWdw2eQ/o.jpg', 
     'is_claimed': true, 
-    'is_closed': false, 
+    'is_closed': pickTrueOrFalse(), 
     'url': 'https://www.yelp.com/biz/taqueria-casas-kissimmee?adjust_creative=p5JPLml8YiVq3TUr8ab8hw&utm_campaign=yelp_api_v3&utm_medium=api_v3_business_lookup&utm_source=p5JPLml8YiVq3TUr8ab8hw', 
     'phone': '+14073900703', 
     'display_phone': '(407) 390-0703', 
     'review_count': 37, 
     'categories': [
       {
-        'alias': randomAliasOne, 
-        'title': randomAliasOne
+        'alias': categories[randomCategoryIndexOne], 
+        'title': categories[randomCategoryIndexOne]
       },
       {
-        'alias': randomAliasTwo, 
-        'title': randomAliasTwo
+        'alias': categories[randomCategoryIndexTwo], 
+        'title': categories[randomCategoryIndexTwo]
       },
       {
-        'alias': randomAliasThree, 
-        'title': randomAliasThree
+        'alias': categories[randomCategoryIndexThree], 
+        'title': categories[randomCategoryIndexThree]
       }
     ], 
     'rating': rating || 5, 
@@ -208,7 +218,7 @@ var makeuser = () => {
 };
 
 var chooseRandomUser = () => {
-  return Math.floor(Math.random() * 11000);
+  return Math.floor(Math.random() * 500000);
   //math.random should be multiplied by however many users there are plus 1
 };
 
@@ -226,6 +236,7 @@ var makeRestaurantReviews = (restaurantId) => {
   // var randomLocationIndex = Math.floor(Math.random() * 81257);
   // var randomLocation = fakeLocationData[randomLocationIndex].split('\tpumpkins\t');
   var date = randomDate(new Date(2017, 6, 1), new Date());
+  var paragraph = txtgen.paragraph();
 
   var review = {
     // latitude: randomLocation[3], 
@@ -234,7 +245,8 @@ var makeRestaurantReviews = (restaurantId) => {
     userId: chooseRandomUser(),
     rating: rating || 5,
     restaurantId: restaurantId,
-    date: date
+    date: date,
+    body: paragraph
   };
   // reviews.push(review);
   // }
@@ -246,6 +258,7 @@ var makeRestaurantProfile = (restaurant) => {
     name: restaurant.name,
     phone: restaurant.phone,
     yelpId: restaurant.id,
+    is_closed: restaurant.is_closed,
     categories: [
       restaurant.categories[0].title,
       restaurant.categories[1].title,
