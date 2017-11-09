@@ -4,76 +4,129 @@ var cheerio = require('cheerio');
 var express = require('express');
 var app = express();
 var fetcher = require('../helpers/apiFetcher.js');
+var faker = require('faker');
+var fs = require('fs');
+var location = require('./fakeLocationData.txt');
+var db = require('./dbQueryFunctions.js');
+var Promise = require('bluebird');
+var AWS = require('aws-sdk');
+AWS.config.loadFromPath('./config/config.json');
+var sqs = new AWS.SQS({apiVersion: '2012-11-05'});
 
-//
+
+var chooseRandomUser = () => {
+  return Math.floor(Math.random() * 40000);
+};
 
 
-var categories = [
-  'Mexican',
-  'seafood',
-  'Meatballs',
-];
+ 
+var restaurantProfileMaker = function() {
+  var yelp = fetcher.generateDetailedRestaurantsObject();
+  var restaurantProfile = fetcher.makeRestaurantProfile(yelp);
+  var allReviews = [];
+  var allCategories = [];
+  var allRestaurantCategories = [];
+  var userId = {};
+  db.restaurants.save(restaurantProfile)
+    .then((data) => {
+      var restaurantId = data.dataValues.id;
+      restaurantProfile.id = restaurantId;
+      for (var i = 0; i < 101; i++) {
+        var review = fetcher.makeRestaurantReviews(restaurantId);
+        userId = review.userId;
+        var reviewForDb = {
+          rating: review.rating,
+          dates: review.date,
+          body: review.body,
+          userId: review.userId,
+          restaurantId: review.restaurantId
+        };
+        allReviews.push(reviewForDb);
+ 
+      }
+      db.reviews.save(allReviews)
+        .then((data) => {
 
-app.get('/', (req, res) => {
-  var dummyData = categories.map(category => {
-    return fetcher.fetchAll(category).then(data => {
-      return {data: data};
-    });
-  });
+          let querySQSTwo = {
+            DelaySeconds: 10,
+            MessageBody: JSON.stringify(restaurantProfile),
+            QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/appserver'
+          };
 
-  Promise.all(dummyData)
-    .then(data => {
-      console.log('data received', data);
-      res.end('hello world');
+          sqs.sendMessage(querySQSTwo, function(err, data) {
+            if (err) {
+              console.log('Error sending to restaurantToAppServer queue"', err);
+            } else {
+              console.log('Success sending to restaurantToAppServer queue', data.MessageId);
+            }
+          });
+
+          let querySQS = {
+            DelaySeconds: 10,
+            MessageBody: JSON.stringify(restaurantProfile),
+            QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantProfileToRecommender'
+          };
+
+          sqs.sendMessage(querySQS, function(err, data) {
+            if (err) {
+              console.log('Error sending to restaurantProfileToRecommender queue"', err);
+            } else {
+              console.log('Success sending to restaurantProfileToRecommender queue', data.MessageId);
+            }
+          });
+
+          let querySQSFour = {
+            DelaySeconds: 10,
+            MessageBody: JSON.stringify(restaurantProfile),
+            QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/restaurantProfileToCustomer'
+          };
+
+          sqs.sendMessage(querySQSFour, function(err, data) {
+            if (err) {
+              console.log('Error sending to restaurantProfileToCustomer queue"', err);
+            } else {
+              console.log('Success sending to restaurantProfileToCustomer queue', data.MessageId);
+            }
+          });
+
+          let querySQSThree = {
+            DelaySeconds: 10,
+            MessageBody: JSON.stringify(allReviews),
+            QueueUrl: 'https://sqs.us-west-1.amazonaws.com/213354805027/reviewsToCustomerProfile'
+          };
+
+          sqs.sendMessage(querySQSThree, function(err, data) {
+            if (err) {
+              console.log('Error sending to reviewsToCustomerProfile queue"', err);
+            } else {
+              console.log('Success sending to reviewsToCustomerProfile queue', data.MessageId);
+            }
+          });
+        })
+        .catch(function(err) {
+          console.log('there was an error saving reviews to the database', err.message);
+        });
+       
     })
-    .catch(err => {
-      console.log('There was an error', err);
+    .catch(function(err) {
+      console.log('there was an error saving to the database', err.message);
     });
+};
 
-});
+if (process.argv.length > 2) {
+  const cmd = process.argv[2];
+  const parsedNumberCmd = parseInt(cmd, 10);
+  if (Number.isInteger(parsedNumberCmd) && parsedNumberCmd > 0) {
 
-// app.get('/', function (req, res) {
-//   var url = 'https://www.yelp.com/biz/el-toro-taqueria-san-francisco';
-//   request.get(url, function (err, response, body) {
-//     if (err) {
-//       console.log('there was an error', err);
-//     } else {
-//       var reviews = [];
-//       var $ = cheerio.load(body);
-//       var reviewContainer = $('.review-content p');
-//       // var userNames = $('li.user-name');
-//       // var userNames = $('.user-name');
-      
-//       // the following code gets each review and puts it all in an array called reviews
-//       for (var i in reviewContainer) {
-//         var reviewText = [];
-//         if (reviewContainer[i].children) {
-//           var reviewChunks = [];
-//           for (var j = 0; j < reviewContainer[i].children.length; j++) {
-//             if (reviewContainer[i].children[j]) {
-//               if (reviewContainer[i].children[j].data) {
-//                 reviewChunks.push(reviewContainer[i].children[j].data);
-//               }
-//             }
-//           }
-//           reviewText.push(reviewChunks.join(' '));
-//         }
-//         reviews.push(reviewText);
-//       }
-//       console.log('TEXT!!!!!!!!!!', reviews);
+    var repeat = (repeatAmount) => {
+      for (var i = 0; i < repeatAmount; i++) {
+        restaurantProfileMaker();
 
-//       // console.log('userNames', userNames[0].children);
+      }
+    };
 
+    repeat(parsedNumberCmd);
+  }
+} else {
 
-
-//     }
-//   });
-
-//   res.send('Hello world');
-// });
-
-
-
-app.listen(3000, function () {
-  console.log('listening on port 3000!');
-});
+}
