@@ -1,4 +1,6 @@
 var db = require('../database/index.js');
+var Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 // var db = require('../database/index.js');
 
 module.exports = {
@@ -16,7 +18,34 @@ module.exports = {
           country: data.country,
           state: data.state,
           price: data.price,
-          is_closed: data.is_closed
+          is_closed: data.is_closed,
+          categoryOne: data.categories[0],
+          categoryTwo: data.categories[1],
+          categoryThree: data.categories[2],
+          phone: data.phone
+        })
+      );
+    },
+    get: function(id) {
+      return (
+        db.Restaurant.findAll({
+          where: {
+            id: id
+          }
+        })
+      );
+    },
+    getRefactored: function(startingId, endId) {
+      return (
+        db.Restaurant.findAll({
+          where: {
+            id: {
+              [Op.and]: {
+                [Op.gt]: startingId,
+                [Op.lte]: endId
+              }
+            }
+          }
         })
       );
     }
@@ -25,6 +54,15 @@ module.exports = {
     save: function(reviews) {
       return (
         db.Review.bulkCreate(reviews)
+      );
+    },
+    get: function(id) {
+      return (
+        db.Review.findAll({
+          where: {
+            restaurantId: id
+          }
+        })
       );
     }
   },
@@ -49,6 +87,15 @@ module.exports = {
       return (
         db.Categories.bulkCreate(categories)
       );
+    }, 
+    get: function(id) {
+      return (
+        db.Categories.findAll({
+          where: {
+            id: id
+          }
+        })
+      );
     }
   },
   restaurantCategories: {
@@ -56,6 +103,15 @@ module.exports = {
       return (
         db.RestaurantCategories.bulkCreate(object)
       );   
+    },
+    get: function(id) {
+      return (
+        db.RestaurantCategories.findAll({
+          where: {
+            restaurantId: id
+          }
+        })
+      );
     }
   }
 };

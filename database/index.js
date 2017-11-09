@@ -1,4 +1,5 @@
 var Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 var connection = new Sequelize('yelp', 'root', '', {
   dialect: 'mysql',
@@ -17,11 +18,13 @@ var User = connection.define('user', {
   longitude: Sequelize.TEXT,
   zipcode: Sequelize.INTEGER
 });
-
+ 
 var Review = connection.define('review', {
   rating: Sequelize.INTEGER,
   dates: Sequelize.DATE,
-  body: Sequelize.TEXT
+  body: Sequelize.TEXT,
+  userId: Sequelize.INTEGER,
+  restaurantId: Sequelize.INTEGER
   // userId and restaurantId are foreign keys
 });
 
@@ -35,7 +38,11 @@ var Restaurant = connection.define('restaurant', {
   country: Sequelize.TEXT,
   state: Sequelize.TEXT,
   price: Sequelize.TEXT,
-  is_closed: Sequelize.BOOLEAN
+  is_closed: Sequelize.BOOLEAN,
+  categoryOne: Sequelize.TEXT,
+  categoryTwo: Sequelize.TEXT,
+  categoryThree: Sequelize.TEXT,
+  phone: Sequelize.TEXT
 });
  
 var Categories = connection.define('categories', {

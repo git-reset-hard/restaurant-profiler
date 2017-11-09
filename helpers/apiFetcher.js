@@ -7,32 +7,6 @@ var txtgen = require('txtgen');
 var categories = require('./restaurantCategories.js');
 
 
-// const fetchRestaurantList = (terms) => {
-//   let options = {
-//     url: `https://api.yelp.com/v3/businesses/search?term=${terms}&location=34746`,
-//     auth: {
-//       'bearer': 'VIbYemNYt5Ovsg5HgnB9eWuQznMb9Om1CbYboaZLE3jsq8xRYcTHrlO30DRFXXtZtiVAmL6WPN3MV98WXAft5l4sXydQfrtIJeYidoKI9IFTXmNFJbasKIX881vdWXYx'
-//     },
-//   };
-//   return rp(options);
-// };
-
-// const fetchAllRestaurantDetails = (restaurantId) => {
-//   let options = {
-//     url: `https://api.yelp.com/v3/businesses/${restaurantId}`,
-//     auth: {
-//       'bearer': 'VIbYemNYt5Ovsg5HgnB9eWuQznMb9Om1CbYboaZLE3jsq8xRYcTHrlO30DRFXXtZtiVAmL6WPN3MV98WXAft5l4sXydQfrtIJeYidoKI9IFTXmNFJbasKIX881vdWXYx'
-//     },
-//   };
-//   return rp(options);
-// };
-
-// const fetchAllReviews = (restaurantId) => {
-//   let options = {
-//     url: `https://www.yelp.com/biz/${restaurantId}`,
-//   };
-//   return rp(options);
-// };
 
 var makeUserId = function() {
   var text = '';
@@ -48,23 +22,6 @@ var pickTrueOrFalse = function() {
   return binaryDecision === 1 ? true : false;
 };
 
-// var makeReviewId = function() {
-//   var text = '';
-//   var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789';
-//   for (var i = 0; i < 10; i++) {
-//     text += possible.charAt(Math.floor(Math.random() * possible.length));
-//   }
-//   return text;
-// };
-
-// var makeid = function() {
-//   var text = '';
-//   var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz0123456789';
-//   for (var i = 0; i < 6; i++) {
-//     text += possible.charAt(Math.floor(Math.random() * possible.length));
-//   }
-//   return text;
-// };
 
 const generateDetailedRestaurantsObject = () => {
   // console.log('cats', categories.length)
@@ -87,9 +44,6 @@ const generateDetailedRestaurantsObject = () => {
 
   var fakeLocationData = location.location;
   fakeLocationData = fakeLocationData.split('\t\t\n');
-  // var randomAliasOne = faker.random.word();
-  // var randomAliasTwo = faker.random.word();
-  // var randomAliasThree = faker.random.word();
   var name = faker.name.findName();
   var rating = Math.floor(Math.random() * 6);
   var randomLocationIndex = Math.floor(Math.random() * 300) + 50000;
@@ -219,7 +173,6 @@ var makeuser = () => {
 
 var chooseRandomUser = () => {
   return Math.floor(Math.random() * 500000);
-  //math.random should be multiplied by however many users there are plus 1
 };
 
 var makeRestaurantReviews = (restaurantId) => {
@@ -227,29 +180,19 @@ var makeRestaurantReviews = (restaurantId) => {
   const randomDate = function(start, end) {
     return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
   };
-
-  // for (var i = 0; i < 101; i++) {
-    //random number generate ID
-    // var fakeLocationData = location.location;
-    // fakeLocationData = fakeLocationData.split('\t\t\n');
+ 
   var rating = Math.floor(Math.random() * 6);
-  // var randomLocationIndex = Math.floor(Math.random() * 81257);
-  // var randomLocation = fakeLocationData[randomLocationIndex].split('\tpumpkins\t');
   var date = randomDate(new Date(2017, 6, 1), new Date());
   var paragraph = txtgen.paragraph();
 
   var review = {
-    // latitude: randomLocation[3], 
-    // longitude: randomLocation[4],
-    // zipcode: randomLocation[0],
     userId: chooseRandomUser(),
     rating: rating || 5,
     restaurantId: restaurantId,
     date: date,
     body: paragraph
   };
-  // reviews.push(review);
-  // }
+
   return review;
 };
 
@@ -272,7 +215,6 @@ var makeRestaurantProfile = (restaurant) => {
     'latitude': restaurant.coordinates.latitude, 
     'longitude': restaurant.coordinates.longitude,
     'price': restaurant.price
-    // reviews: makeRestaurantReviews(restaurantProfile.id)
   };
 
   return restaurantProfile;
@@ -304,9 +246,6 @@ var makeRestaurantProfileWithoutReviews = (restaurant) => {
 
 
 module.exports = {
-  // fetchRestaurantList,
-  // fetchAllRestaurantDetails,
-  // fetchAllReviews,
   generateDetailedRestaurantsObject,
   makeRestaurantReviews,
   makeRestaurantProfile,
